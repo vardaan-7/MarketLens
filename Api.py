@@ -2,9 +2,17 @@ from fastapi import FastAPI, Query, HTTPException
 import yfinance as yf
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="MarketLens API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/predict")
 def predict(

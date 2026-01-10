@@ -13,6 +13,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [prices, setPrices] = useState([]);
   const [error, setError] = useState(null);
+  const [threshold, setThreshold] = useState(0.55); // NEW
 
   const handlePredict = async () => {
     if (!ticker) {
@@ -55,6 +56,24 @@ function App() {
 
       <br /><br />
 
+      {/* THRESHOLD SLIDER */}
+      <div style={{ marginBottom: "16px" }}>
+        <label>
+          <strong>Confidence Threshold:</strong>{" "}
+          {(threshold * 100).toFixed(0)}%
+        </label>
+        <br />
+        <input
+          type="range"
+          min="0.5"
+          max="0.7"
+          step="0.01"
+          value={threshold}
+          onChange={(e) => setThreshold(parseFloat(e.target.value))}
+          style={{ width: "300px" }}
+        />
+      </div>
+
       <button onClick={handlePredict}>
         Predict
       </button>
@@ -62,10 +81,18 @@ function App() {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {result && (
-        <p>
-          <strong>Probability Up:</strong>{" "}
-          {(result.probability_up * 100).toFixed(2)}%
-        </p>
+        <>
+          <p>
+            <strong>Probability Up:</strong>{" "}
+            {(result.probability_up * 100).toFixed(2)}%
+          </p>
+          <p>
+            <strong>Signal:</strong>{" "}
+            {result.probability_up > threshold
+              ? "Bullish 📈"
+              : "Stay Cautious ⚠️"}
+          </p>
+        </>
       )}
 
       {prices.length > 0 && (
@@ -79,7 +106,7 @@ function App() {
               <Line
                 type="monotone"
                 dataKey="close"
-                stroke="#2563eb"
+                stroke="#3066daff"
                 dot={false}
               />
             </LineChart>

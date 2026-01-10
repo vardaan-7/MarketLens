@@ -1,75 +1,90 @@
 import { useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 
 function App() {
   const [ticker, setTicker] = useState("");
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [prices, setPrices] = useState([]);
   const [error, setError] = useState(null);
 
   const handlePredict = async () => {
     if (!ticker) {
-      setError("Please enter a ticker");
+      setError("Enter a ticker");
       return;
     }
 
-    setLoading(true);
     setError(null);
     setResult(null);
+    setPrices([]);
 
     try {
-      const response = await fetch(
+      const predRes = await fetch(
         `http://127.0.0.1:8000/predict?ticker=${ticker}`
       );
+      const predData = await predRes.json();
+      setResult(predData);
 
-      if (!response.ok) {
-        throw new Error("API error");
-      }
+      const priceRes = await fetch(
+        `http://127.0.0.1:8000/prices?ticker=${ticker}`
+      );
+      const priceData = await priceRes.json();
+      setPrices(priceData.prices);
 
-      const data = await response.json();
-      setResult(data);
-    } catch (err) {
-      setError("Failed to fetch prediction");
-    } finally {
-      setLoading(false);
+    } catch {
+      setError("Failed to load data");
     }
   };
 
   return (
     <div style={{ padding: "40px", fontFamily: "Arial" }}>
       <h1>📈 MarketLens</h1>
-      <p>ML-based stock prediction</p>
 
       <input
-        type="text"
-        placeholder="Enter ticker (e.g. RELIANCE.NS)"
         value={ticker}
         onChange={(e) => setTicker(e.target.value)}
+        placeholder="Enter ticker (e.g. RELIANCE.NS)"
         style={{ padding: "8px", width: "300px" }}
       />
 
       <br /><br />
 
-      <button onClick={handlePredict} disabled={loading}>
-        {loading ? "Predicting..." : "Predict"}
+      <button onClick={handlePredict}>
+        Predict
       </button>
-
-      <br /><br />
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {result && (
-        <div>
-          <h3>Result</h3>
-          <p><strong>Ticker:</strong> {result.ticker}</p>
-          <p>
-            <strong>Probability Up:</strong>{" "}
-            {(result.probability_up * 100).toFixed(2)}%
-          </p>
-          <p>
-            <strong>Signal:</strong>{" "}
-            {result.probability_up > 0.55 ? "Bullish 📈" : "Stay Cautious ⚠️"}
-          </p>
-        </div>
+        <p>
+          <strong>Probability Up:</strong>{" "}
+          {(result.probability_up * 100).toFixed(2)}%
+        </p>
+      )}
+
+      {prices.length > 0 && (
+        <>
+          <h3>Price Chart (Last 6 Months)</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={prices}>
+              <XAxis dataKey="date" hide />
+              <YAxis />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="close"
+                stroke="#2563eb"
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </>
       )}
     </div>
   );

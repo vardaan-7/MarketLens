@@ -73,3 +73,28 @@ def health():
         "status": "ok",
         "service": "marketlens-ml"
     }
+
+@app.get("/prices")
+def get_prices(
+    ticker: str = Query(..., description="Stock ticker symbol")
+):
+    df = yf.download(ticker, period="6mo", interval="1d")
+
+    if df.empty:
+        raise HTTPException(status_code=404, detail="Invalid ticker")
+
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.droplevel(1)
+
+    prices = [
+        {
+            "date": str(date.date()),
+            "close": float(close)
+        }
+        for date, close in zip(df.index, df["Close"])
+    ]
+
+    return {
+        "ticker": ticker.upper(),
+        "prices": prices
+    }

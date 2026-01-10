@@ -27,7 +27,6 @@ df["RSI_14"] = 100 - (100 / (1 + rs))
 
 df["Volatility_20"] = df["Daily_Return"].rolling(20).std()
 
-
 df["Target"] = (df["Daily_Return"].shift(-1) > 0).astype(int)
 
 features = ["SMA_20", "EMA_20", "RSI_14", "Volatility_20"]
@@ -38,34 +37,28 @@ train = df_model.iloc[:split]
 test = df_model.iloc[split:]
 
 X_train, y_train = train[features], train["Target"]
-X_test, y_test = test[features], test["Target"]
-
+X_test = test[features]
 
 model = LogisticRegression(max_iter=1000)
 model.fit(X_train, y_train)
 
 test = test.copy()
-test["Prediction"] = model.predict(X_test)
+test["Prob_UP"] = model.predict_proba(X_test)[:, 1]
 
+THRESHOLD = 0.55
+test["ML_Position"] = (test["Prob_UP"] > THRESHOLD).astype(int)
+test["ML_Position"] = test["ML_Position"].shift(1)
 
-# Strategy:go long only when model predicts UP
-test["ML_Position"] = test["Prediction"].shift(1)  # avoid look-ahead bias
 test["ML_Return"] = test["ML_Position"] * test["Daily_Return"]
-
-# Buy & Hold for comparison
 test["Market_Return"] = test["Daily_Return"]
-
-#Cumulative returns
 
 test["ML_Curve"] = (1 + test["ML_Return"]).cumprod()
 test["Market_Curve"] = (1 + test["Market_Return"]).cumprod()
 
-#Plot comparison
-
 plt.figure(figsize=(12, 6))
 plt.plot(test.index, test["Market_Curve"], label="Buy & Hold", alpha=0.7)
-plt.plot(test.index, test["ML_Curve"], label="ML Strategy", linewidth=2)
-plt.title(f"{ticker} – Backtesting ML-Based Strategy")
+plt.plot(test.index, test["ML_Curve"], label=f"ML Strategy (p > {THRESHOLD})", linewidth=2)
+plt.title(f"{ticker} – Probability-Based ML Strategy")
 plt.xlabel("Date")
 plt.ylabel("Cumulative Return")
 plt.legend()

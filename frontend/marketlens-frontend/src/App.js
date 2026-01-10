@@ -13,7 +13,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [prices, setPrices] = useState([]);
   const [error, setError] = useState(null);
-  const [threshold, setThreshold] = useState(0.55); // NEW
+  const [threshold, setThreshold] = useState(0.55);
 
   const handlePredict = async () => {
     if (!ticker) {
@@ -80,21 +80,40 @@ function App() {
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
+      {/* PROBABILITY + SIGNAL */}
       {result && (
         <>
           <p>
             <strong>Probability Up:</strong>{" "}
             {(result.probability_up * 100).toFixed(2)}%
           </p>
+
           <p>
             <strong>Signal:</strong>{" "}
             {result.probability_up > threshold
               ? "Bullish 📈"
               : "Stay Cautious ⚠️"}
           </p>
+
+          {/* FEATURE IMPORTANCE */}
+          {result.feature_importance && (
+            <div style={{ marginTop: "16px" }}>
+              <h4>Key Factors Influencing Prediction</h4>
+              <ul>
+                {Object.entries(result.feature_importance).map(
+                  ([feature, value]) => (
+                    <li key={feature}>
+                      {feature}: {(value * 100).toFixed(1)}%
+                    </li>
+                  )
+                )}
+              </ul>
+            </div>
+          )}
         </>
       )}
 
+      {/* PRICE CHART */}
       {prices.length > 0 && (
         <>
           <h3>Price Chart (Last 6 Months)</h3>
@@ -106,7 +125,7 @@ function App() {
               <Line
                 type="monotone"
                 dataKey="close"
-                stroke="#3066daff"
+                stroke="#2563eb"
                 dot={false}
               />
             </LineChart>

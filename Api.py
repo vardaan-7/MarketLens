@@ -62,14 +62,27 @@ def predict(
     random_state=42
     )
     model.fit(X, y)
+    importances = model.feature_importances_
+    feature_importance = dict(
+        sorted(
+            zip(features, importances),
+            key=lambda x: x[1],
+            reverse=True
+              )
+        )
+
 
     latest = df[features].dropna().iloc[-1:]
     prob_up = model.predict_proba(latest)[0][1]
 
     return {
-        "ticker": ticker.upper(),
-        "probability_up": round(float(prob_up), 4)
+    "ticker": ticker.upper(),
+    "probability_up": round(float(prob_up), 4),
+    "feature_importance": {
+        k: round(float(v), 3)
+        for k, v in feature_importance.items()
     }
+}
 
 
 @app.get("/health")

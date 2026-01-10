@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, HTTPException
 import yfinance as yf
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="MarketLens API")
@@ -55,7 +55,12 @@ def predict(
     X = df_model[features]
     y = df_model["Target"]
 
-    model = LogisticRegression(max_iter=1000)
+    model = RandomForestClassifier(
+    n_estimators=200,
+    max_depth=6,
+    min_samples_split=20,
+    random_state=42
+    )
     model.fit(X, y)
 
     latest = df[features].dropna().iloc[-1:]

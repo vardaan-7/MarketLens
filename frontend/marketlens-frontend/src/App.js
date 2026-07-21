@@ -14,7 +14,7 @@ function App() {
   const [prices, setPrices] = useState([]);
   const [error, setError] = useState(null);
   const [threshold, setThreshold] = useState(0.55);
-  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
+  const apiBaseUrl = "https://marketlens-p54l.onrender.com";
 
   const handlePredict = async () => {
     if (!ticker) {

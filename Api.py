@@ -35,8 +35,11 @@ def predict(
     if df.empty:
         raise HTTPException(status_code=404, detail="Invalid or unavailable ticker")
 
+    # Safely flatten columns regardless of structure shape
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.droplevel(1)
+    elif ticker.upper() in df.columns:
+        df.columns = [str(col) for col in df.columns]
 
     df["Daily_Return"] = df["Close"].pct_change()
     df["SMA_20"] = df["Close"].rolling(20).mean()
@@ -102,20 +105,34 @@ def health():
 def get_prices(
     ticker: str = Query(..., description="Stock ticker symbol")
 ):
-    df = yf.download(ticker, period="6mo", interval="1d")
+    try:
+        df = yf.download(ticker, period="6mo", interval="1d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Failed to fetch price data")
 
     if df.empty:
         raise HTTPException(status_code=404, detail="Invalid ticker")
 
+    # Safely flatten columns for the price array mapping block
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.droplevel(1)
+
+    # Force direct extraction of the Close series values
+    try:
+        close_series = df["Close"]
+    except KeyError:
+        # Fallback if yfinance maps columns as (Ticker, Close) instead
+        if ticker.upper() in df.columns:
+            close_series = df[ticker.upper()]
+        else:
+            raise HTTPException(status_code=500, detail="Close price column mapping missing")
 
     prices = [
         {
             "date": str(date.date()),
             "close": float(close)
         }
-        for date, close in zip(df.index, df["Close"])
+        for date, close in zip(df.index, close_series)
     ]
 
     return {

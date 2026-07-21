@@ -15,6 +15,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def root():
+    return {
+        "status": "ok",
+        "service": "marketlens-ml",
+        "endpoints": ["/health", "/predict", "/prices"]
+    }
+
 @app.get("/predict")
 def predict(
     ticker: str = Query(..., description="Stock ticker symbol, e.g. RELIANCE.NS")
@@ -30,7 +38,6 @@ def predict(
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.droplevel(1)
 
-    # Feature engineering
     df["Daily_Return"] = df["Close"].pct_change()
     df["SMA_20"] = df["Close"].rolling(20).mean()
     df["EMA_20"] = df["Close"].ewm(span=20, adjust=False).mean()
@@ -57,10 +64,10 @@ def predict(
     y = df_model["Target"]
 
     model = RandomForestClassifier(
-    n_estimators=200,
-    max_depth=6,
-    min_samples_split=20,
-    random_state=42
+        n_estimators=200,
+        max_depth=6,
+        min_samples_split=20,
+        random_state=42
     )
     model.fit(X, y)
     importances = model.feature_importances_
@@ -69,22 +76,20 @@ def predict(
             zip(features, importances),
             key=lambda x: x[1],
             reverse=True
-              )
         )
-
+    )
 
     latest = df[features].dropna().iloc[-1:]
     prob_up = model.predict_proba(latest)[0][1]
 
     return {
-    "ticker": ticker.upper(),
-    "probability_up": round(float(prob_up), 4),
-    "feature_importance": {
-        k: round(float(v), 3)
-        for k, v in feature_importance.items()
+        "ticker": ticker.upper(),
+        "probability_up": round(float(prob_up), 4),
+        "feature_importance": {
+            k: round(float(v), 3)
+            for k, v in feature_importance.items()
+        }
     }
-}
-
 
 @app.get("/health")
 def health():

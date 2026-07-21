@@ -14,6 +14,7 @@ function App() {
   const [prices, setPrices] = useState([]);
   const [error, setError] = useState(null);
   const [threshold, setThreshold] = useState(0.55);
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000";
 
   const handlePredict = async () => {
     if (!ticker) {
@@ -27,13 +28,13 @@ function App() {
 
     try {
       const predRes = await fetch(
-        `http://127.0.0.1:8000/predict?ticker=${ticker}`
+        `${apiBaseUrl}/predict?ticker=${encodeURIComponent(ticker)}`
       );
       const predData = await predRes.json();
       setResult(predData);
 
       const priceRes = await fetch(
-        `http://127.0.0.1:8000/prices?ticker=${ticker}`
+        `${apiBaseUrl}/prices?ticker=${encodeURIComponent(ticker)}`
       );
       const priceData = await priceRes.json();
       setPrices(priceData.prices);
